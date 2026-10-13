@@ -1,0 +1,6 @@
+{
+  "name": "V8 Market Inflow & Whale Scanner",
+  "description": "ماسح السيولة اللحظية وتدفق الحيتان المباشر لأكثر من 350 عملة مشفرة عبر بينانس مع تنبيهات صوتية فورية وإشارات قبل الانفجار.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ V8 ماسح السيولة اللحظية الكامل - 350+ عملة</title>
+  <meta name="description" content="ماسح السيولة اللحظية الكامل وتتبع الحيتان لأكثر من 350 عملة عبر Binance API مباشرة">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            darkbg: '#0c1017',
+            cardbg: '#111722',
+            cyberGreen: '#00ff88',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #0c1017;
+      color: #f1f5f9;
+    }
+    .font-mono-numbers {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    @keyframes pulseGlowGreen {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+        border-color: rgba(16, 185, 129, 0.8);
+      }
+      50% {
+        box-shadow: 0 0 25px rgba(16, 185, 129, 0.55);
+        border-color: rgba(52, 211, 153, 1);
+      }
+    }
+    @keyframes pulseGlowPurple {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+        border-color: rgba(168, 85, 247, 0.8);
+      }
+      50% {
+        box-shadow: 0 0 25px rgba(168, 85, 247, 0.55);
+        border-color: rgba(192, 132, 252, 1);
+      }
+    }
+    .glow-card-green {
+      animation: pulseGlowGreen 2.2s infinite ease-in-out;
+    }
+    .glow-card-purple {
+      animation: pulseGlowPurple 2.2s infinite ease-in-out;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d13;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-[#0c1017] text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500/30 selection:text-emerald-300">
+
+  <!-- Header & Controls -->
+  <header class="border-b border-slate-800/80 bg-[#0c1017]/95 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-3 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        
+        <!-- Brand -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center justify-center w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-2xl">
+            ⚡
+          </div>
+          <div>
+            <h1 class="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+              <span>⚡ V8 ماسح السيولة اللحظية الكامل - 350+ عملة</span>
+            </h1>
+            <div class="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+              <span>Binance Public API & WebSocket</span>
+              <span>•</span>
+              <span id="connectionBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span>بث مباشر لحظي</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center flex-wrap gap-2">
+          <!-- Sound Toggle -->
+          <button id="toggleAudioBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30 transition-all cursor-pointer">
+            <span id="audioIcon">🔔</span>
+            <span id="audioText">التنبيه مفعّل</span>
+          </button>
+
+          <!-- Test Simulation Whale -->
+          <button id="injectWhaleBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-purple-600/25 text-purple-300 border border-purple-500/40 hover:bg-purple-600/35 transition-all cursor-pointer">
+            <span>🧪</span>
+            <span>وضع التجربة / محاكاة</span>
+          </button>
+
+          <!-- Start Scan -->
+          <button id="startScanBtn" class="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-black bg-emerald-500 text-slate-950 border border-emerald-400 hover:bg-emerald-400 transition-all cursor-pointer">
+            <span>▶️</span>
+            <span>بدء الفحص</span>
+          </button>
+
+          <!-- Pause Scan -->
+          <button id="pauseScanBtn" class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 hover:bg-rose-500/30 transition-all cursor-pointer">
+            <span>⏸️</span>
+            <span>إيقاف</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 w-full flex-1">
+    
+    <!-- Stats Counter Row -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
+      <!-- 1. مفحوص -->
+      <div class="rounded-2xl bg-[#111722] border border-slate-800 p-4">
+        <div class="text-xs text-slate-400 font-semibold">مفحوص</div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statScanned" class="text-2xl sm:text-3xl font-black text-white font-mono-numbers">350+</span>
+          <span class="text-xs text-cyan-400 font-mono-numbers">USDT Pairs</span>
+        </div>
+        <div class="text-[11px] text-slate-500 mt-1">تغطية السوق الكاملة</div>
+      </div>
+
+      <!-- 2. سيولة لحظية -->
+      <div class="rounded-2xl bg-[#111722] border border-emerald-500/30 p-4">
+        <div class="text-xs text-emerald-400 font-semibold">سيولة لحظية</div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statInflows" class="text-2xl sm:text-3xl font-black text-emerald-400 font-mono-numbers">0</span>
+          <span class="text-xs text-emerald-500">تنبيه نشط</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-1">دخول فوري &gt; $50K</div>
+      </div>
+
+      <!-- 3. عملات صغيرة -->
+      <div class="rounded-2xl bg-[#111722] border border-purple-500/30 p-4">
+        <div class="text-xs text-purple-300 font-semibold">عملات صغيرة</div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statLowCap" class="text-2xl sm:text-3xl font-black text-purple-400 font-mono-numbers">0</span>
+          <span class="text-xs text-purple-400">انفجار سيولة</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-1">أحجام استثنائية</div>
+      </div>
+
+      <!-- 4. قبل الانفجار -->
+      <div class="rounded-2xl bg-[#111722] border border-amber-500/30 p-4">
+        <div class="text-xs text-amber-300 font-semibold">قبل الانفجار</div>
+        <div class="mt-2 flex items-baseline gap-2">
+          <span id="statPreBreakout" class="text-2xl sm:text-3xl font-black text-amber-400 font-mono-numbers">0</span>
+          <span class="text-xs text-amber-400">تجميع هادئ</span>
+        </div>
+        <div class="text-[11px] text-slate-400 mt-1">تراكم سيولة قبل الانطلاق</div>
+      </div>
+    </div>
+
+    <!-- Live Feed Log -->
+    <div class="rounded-2xl bg-[#0e131c] border border-slate-800 overflow-hidden my-4">
+      <div class="px-4 py-2.5 bg-[#121926] border-b border-slate-800 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <span class="font-bold text-white">سجل التدفق المباشر (Live Feed Log)</span>
+        </div>
+        <button id="clearFeedBtn" class="text-slate-400 hover:text-rose-400 text-xs">
+          مسح السجل
+        </button>
+      </div>
+      <div id="feedContainer" class="h-48 overflow-y-auto p-3 font-mono text-xs space-y-1.5 bg-[#090d14]">
+        <div class="text-slate-500 text-center py-8">جاري مسح البث المباشر لأزواج بينانس... اضغط "وضع التجربة / محاكاة" للاختبار الفوري</div>
+      </div>
+    </div>
+
+    <!-- Active Signal Cards -->
+    <div class="my-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold text-white flex items-center gap-2">
+          <span>🎯 بطاقات الفرص النشطة (Active Signal Cards)</span>
+        </h2>
+        <span id="cardsCountBadge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-mono-numbers">
+          0 بطاقة
+        </span>
+      </div>
+
+      <div id="cardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Dynamic Cards Inserted Here -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Embedded TradingView Modal -->
+  <div id="tvModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-5xl h-[80vh] bg-[#0d121c] border border-slate-700 rounded-2xl flex flex-col overflow-hidden">
+      <div class="px-4 py-3 bg-[#121824] border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span id="tvModalTitle" class="text-base font-bold text-white">BTC/USDT</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">TradingView Live</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <a id="tvModalBinanceLink" href="#" target="_blank" class="px-3 py-1 bg-amber-500 text-slate-950 font-bold rounded-lg text-xs">
+            🚀 تداول في بينانس
+          </a>
+          <button id="tvModalClose" class="text-slate-400 hover:text-white text-lg">✕</button>
+        </div>
+      </div>
+      <div class="flex-1 w-full bg-black">
+        <iframe id="tvIframe" class="w-full h-full border-0" src=""></iframe>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JS Engine -->
+  <script>
+    // State
+    let isAudioEnabled = true;
+    let isScanning = true;
+    let audioCtx = null;
+    let ws = null;
+    let symbolsMap = new Map();
+    let snapshots = new Map();
+    let signals = [];
+    let stats = { scanned: 0, inflows: 0, lowCap: 0, preBreakout: 0 };
+
+    // Audio Synthesizer (Web Audio API)
+    function playAlertPing() {
+      if (!isAudioEnabled) return;
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(950, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.25);
+
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } catch (e) {}
+    }
+
+    // Format Arabic Time
+    function getArabicTime() {
+      const d = new Date();
+      let h = d.getHours();
+      const m = d.getMinutes().toString().padStart(2, '0');
+      const s = d.getSeconds().toString().padStart(2, '0');
+      const ampm = h >= 12 ? 'م' : 'ص';
+      h = h % 12 || 12;
+      return `${h}:${m}:${s} ${ampm}`;
+    }
+
+    // DOM Elements
+    const feedContainer = document.getElementById('feedContainer');
+    const cardsGrid = document.getElementById('cardsGrid');
+    const statScanned = document.getElementById('statScanned');
+    const statInflows = document.getElementById('statInflows');
+    const statLowCap = document.getElementById('statLowCap');
+    const statPreBreakout = document.getElementById('statPreBreakout');
+    const cardsCountBadge = document.getElementById('cardsCountBadge');
+
+    // Add Inflow Signal
+    function addInflow(coin, price, change, surgeAmt, isSim = false) {
+      playAlertPing();
+      stats.inflows++;
+
+      const isWhale = surgeAmt >= 150000;
+      const isBreakout = change >= -3.5 && change <= 4.5;
+      const isLowCap = !isWhale && (coin.volumeQuote24h || 10000000) < 30000000;
+
+      if (isBreakout) stats.preBreakout++;
+      if (isLowCap) stats.lowCap++;
+
+      statInflows.textContent = stats.inflows;
+      statLowCap.textContent = stats.lowCap;
+      statPreBreakout.textContent = stats.preBreakout;
+
+      const timeStr = getArabicTime();
+      const surgeK = Math.round(surgeAmt / 1000);
+      const tagText = `${timeStr} - 💧 لحظية ${coin.baseAsset} $${surgeK}K الآن - ${isBreakout ? 'قبل الانفجار' : isWhale ? 'دخول مؤسسات' : 'تدفق حوت'}`;
+
+      // Append to Live Feed
+      const feedItem = document.createElement('div');
+      feedItem.className = `p-2 rounded-lg border flex items-center justify-between text-xs cursor-pointer transition-all ${
+        isWhale ? 'bg-purple-950/20 border-purple-500/40 text-purple-200' : 'bg-slate-900 border-slate-800 text-emerald-300'
+      }`;
+      feedItem.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 font-mono-numbers">${timeStr}</span>
+          <span>•</span>
+          <span class="font-bold">${tagText.split(' - ')[1]}</span>
+          ${isSim ? '<span class="px-1 bg-purple-900/50 text-purple-300 text-[10px] rounded">محاكاة</span>' : ''}
+        </div>
+        <div class="font-mono-numbers text-slate-300">$${price < 1 ? price.toFixed(5) : price.toFixed(2)} (${change >= 0 ? '+' : ''}${change.toFixed(2)}%)</div>
+      `;
+      feedItem.onclick = () => openTradingView(coin.symbol);
+      feedContainer.prepend(feedItem);
+
+      // Create Active Signal Card
+      const card = document.createElement('div');
+      const glowClass = isWhale ? 'glow-card-purple border-purple-500/70' : 'glow-card-green border-emerald-500/70';
+      const badgeText = isWhale ? '🏛️ دخول مؤسسات/حيتان' : isBreakout ? '🎯 فرصة قبل الانفجار' : '⚡ اختراق سيولة لحظي';
+      const vol24HM = ((coin.volumeQuote24h || 50000000) / 1000000).toFixed(1);
+
+      card.className = `rounded-2xl bg-gradient-to-b from-[#121824] to-[#0c1017] border-2 ${glowClass} p-5 shadow-xl flex flex-col justify-between`;
+      card.innerHTML = `
+        <div>
+          <div class="flex items-start justify-between">
+            <div class="flex items-center gap-2">
+              <div class="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center font-black text-white text-base">
+                ${coin.baseAsset.slice(0, 3)}
+              </div>
+              <div>
+                <div class="text-lg font-black text-white">${coin.baseAsset} <span class="text-xs text-slate-400">/USDT</span></div>
+                <div class="text-xs text-slate-400 font-mono-numbers">${timeStr}</div>
+              </div>
+            </div>
+            <div class="text-left font-mono-numbers">
+              <div class="text-lg font-bold text-white">$${price < 1 ? price.toFixed(5) : price.toFixed(2)}</div>
+              <div class="text-xs font-bold ${change >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${change >= 0 ? '+' : ''}${change.toFixed(2)}%</div>
+            </div>
+          </div>
+
+          <div class="mt-4 p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/40 text-emerald-200">
+            <div class="text-base font-black font-mono-numbers">💰 $${surgeK}K دخلت الآن</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">وقت الدخول بالثانية: <span class="text-slate-300 font-mono-numbers">${timeStr}</span></div>
+          </div>
+
+          <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2 rounded-lg bg-slate-900 border border-slate-800">
+              <span class="text-slate-400 block text-[11px]">حجم تداول 24 ساعة:</span>
+              <span class="font-bold text-slate-200 font-mono-numbers">$${vol24HM}M</span>
+            </div>
+            <div class="p-2 rounded-lg bg-slate-900 border border-slate-800">
+              <span class="text-slate-400 block text-[11px]">تصنيف الإشارة:</span>
+              <span class="font-bold text-emerald-400">${badgeText}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-800 flex items-center gap-2">
+          <a href="https://www.binance.com/ar/trade/${coin.baseAsset}_USDT?type=spot" target="_blank" class="flex-1 text-center py-2 px-3 rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/25">
+            🚀 تداول في بينانس
+          </a>
+          <button onclick="openTradingView('${coin.symbol}')" class="flex-1 text-center py-2 px-3 rounded-xl bg-cyan-500/15 text-cyan-300 border border-cyan-500/40 text-xs font-bold hover:bg-cyan-500/25">
+            📈 شارت TradingView
+          </button>
+        </div>
+      `;
+
+      cardsGrid.prepend(card);
+      if (cardsGrid.children.length > 30) {
+        cardsGrid.removeChild(cardsGrid.lastChild);
+      }
+      cardsCountBadge.textContent = `${cardsGrid.children.length} بطاقة`;
+    }
+
+    // TradingView Modal Handler
+    window.openTradingView = function(symbol) {
+      const modal = document.getElementById('tvModal');
+      const title = document.getElementById('tvModalTitle');
+      const binanceLink = document.getElementById('tvModalBinanceLink');
+      const iframe = document.getElementById('tvIframe');
+
+      const base = symbol.replace('USDT', '');
+      title.textContent = `${base}/USDT`;
+      binanceLink.href = `https://www.binance.com/ar/trade/${base}_USDT?type=spot`;
+      iframe.src = `https://s.tradingview.com/widgetembed/?symbol=BINANCE:${encodeURIComponent(base)}USDT&interval=15&theme=dark`;
+
+      modal.classList.remove('hidden');
+    };
+
+    document.getElementById('tvModalClose').onclick = () => {
+      document.getElementById('tvModal').classList.add('hidden');
+    };
+
+    // WebSocket / Binance Integration
+    function connectBinance() {
+      if (ws) ws.close();
+      ws = new WebSocket('wss://stream.binance.com:9443/ws/!miniTicker@arr');
+
+      ws.onmessage = (event) => {
+        if (!isScanning) return;
+        const data = JSON.parse(event.data);
+        if (!Array.isArray(data)) return;
+
+        const now = Date.now();
+        data.forEach(item => {
+          const excluded = ['USDCUSDT', 'FDUSDUSDT', 'TUSDUSDT', 'USDPUSDT', 'BUSDUSDT', 'EURUSDT', 'DAIUSDT', 'AEURUSDT', 'EURIUSDT', 'USDDUSDT', 'USTCUSDT', 'WBTCUSDT', 'WBETHUSDT'];
+          if (!sym.endsWith('USDT') || sym.includes('UP') || sym.includes('DOWN') || excluded.includes(sym)) return;
+
+          const quoteVol = parseFloat(item.q) || 0;
+          const price = parseFloat(item.c) || 0;
+          const open = parseFloat(item.o) || price;
+          const change = open > 0 ? ((price - open) / open) * 100 : 0;
+          const baseAsset = sym.replace('USDT', '');
+
+          const coinObj = { symbol: sym, baseAsset, price, change, volumeQuote24h: quoteVol };
+          symbolsMap.set(sym, coinObj);
+
+          const snap = snapshots.get(sym);
+          if (!snap) {
+            snapshots.set(sym, { q: quoteVol, time: now });
+            return;
+          }
+
+          const deltaQ = quoteVol - snap.q;
+          const deltaT = (now - snap.time) / 1000;
+
+          if (deltaQ >= 75000 && deltaT >= 1 && deltaT <= 25) {
+            addInflow(coinObj, price, change, deltaQ);
+            snap.q = quoteVol;
+            snap.time = now;
+          } else if (deltaT > 15 || deltaQ > 0) {
+            snap.q = quoteVol;
+            snap.time = now;
+          }
+        });
+
+        statScanned.textContent = `${symbolsMap.size}+`;
+      };
+    }
+
+    // Button Listeners
+    document.getElementById('toggleAudioBtn').onclick = () => {
+      isAudioEnabled = !isAudioEnabled;
+      document.getElementById('audioIcon').textContent = isAudioEnabled ? '🔔' : '🔕';
+      document.getElementById('audioText').textContent = isAudioEnabled ? 'التنبيه مفعّل' : 'تفعيل التنبيه';
+      if (isAudioEnabled) playAlertPing();
+    };
+
+    document.getElementById('injectWhaleBtn').onclick = () => {
+      const sampleCoins = [
+        { symbol: 'SOLUSDT', baseAsset: 'SOL', price: 154.2, change: 2.4, volumeQuote24h: 380000000 },
+        { symbol: 'PEPEUSDT', baseAsset: 'PEPE', price: 0.0000095, change: 1.1, volumeQuote24h: 95000000 },
+        { symbol: 'SUIUSDT', baseAsset: 'SUI', price: 2.18, change: -1.2, volumeQuote24h: 120000000 },
+        { symbol: 'BTCUSDT', baseAsset: 'BTC', price: 68500, change: 0.8, volumeQuote24h: 1800000000 }
+      ];
+      const pick = sampleCoins[Math.floor(Math.random() * sampleCoins.length)];
+      const amt = (Math.floor(Math.random() * 6) + 2) * 80000;
+      addInflow(pick, pick.price, pick.change, amt, true);
+    };
+
+    document.getElementById('startScanBtn').onclick = () => {
+      isScanning = true;
+      document.getElementById('connectionBadge').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span><span>بث مباشر لحظي</span>';
+      connectBinance();
+    };
+
+    document.getElementById('pauseScanBtn').onclick = () => {
+      isScanning = false;
+      document.getElementById('connectionBadge').innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span><span>الفحص متوقف</span>';
+    };
+
+    document.getElementById('clearFeedBtn').onclick = () => {
+      feedContainer.innerHTML = '';
+    };
+
+    // Auto start
+    connectBinance();
+
+    // Initial simulated alert on launch
+    setTimeout(() => {
+      document.getElementById('injectWhaleBtn').click();
+    }, 1000);
+  </script>
+</body>
+</html>
